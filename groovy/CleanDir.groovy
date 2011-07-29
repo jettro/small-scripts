@@ -26,7 +26,6 @@ configuration = new Configuration()
 cleanedSize = 0
 details = []
 
-
 def class Configuration {
     def homeFolder = System.getProperty("user.home")
     def path = homeFolder + "/.m2/repository"
@@ -34,27 +33,27 @@ def class Configuration {
     def dryRun = true
     def printDetails = true
 }
-// Read provided arguments and store the provided arguments in the configuration object
-if (args) {
-    configuration.dryRun = args[0].toBoolean()
-    if (args.length > 1) {
-        configuration.printDetails = args[1].toBoolean()
-    }
-    if (args.length > 2) {
-        configuration.path = args[2]
-    }
-    if (args.length > 3) {
-        configuration.maxAgeSnapshotsInDays = args[3]
-    }
-}
+
+/*
+ * Main Execution of the script
+ */
+storeProvidedArgsInConfiguration()
 printConfiguration()
 
-// Scan the current directory or the directory as provided by the first parameter of the script
 def mainDir = new File(configuration.path)
 if (!mainDir.directory) {
     printf("The provided directory \"%s\" is not a directory", configuration.path)
-} else {
-    cleanDir(mainDir);
+    System.exit(-1)
+}
+
+cleanDir(mainDir);
+printResultOfCleanAction()
+
+/*
+ * Helper functions
+ */
+
+private def printResultOfCleanAction() {
     printf("* Total size cleaned is %dk\n", Math.round(cleanedSize / 1024))
     println "*******************************************************************************"
     if (configuration.printDetails) {
@@ -64,7 +63,8 @@ if (!mainDir.directory) {
     }
 }
 
-def cleanDir(File file) {
+
+private def cleanDir(File file) {
     def lastModified = new Date(file.lastModified());
     def ageInDays = now - lastModified;
     def directories = file.listFiles(new DirectoryFilter());
@@ -89,7 +89,23 @@ def cleanDir(File file) {
     }
 }
 
-def printConfiguration() {
+// Read provided arguments and store the provided arguments in the configuration object
+private def storeProvidedArgsInConfiguration() {
+    if (args) {
+        configuration.dryRun = args[0].toBoolean()
+        if (args.length > 1) {
+            configuration.printDetails = args[1].toBoolean()
+        }
+        if (args.length > 2) {
+            configuration.path = args[2]
+        }
+        if (args.length > 3) {
+            configuration.maxAgeSnapshotsInDays = args[3]
+        }
+    }
+}
+
+private def printConfiguration() {
     println "*******************************************************************************"
     println "* About the clean a maven repository"
     printf("* Start cleaning at path: %s\n", configuration.path)
