@@ -30,11 +30,11 @@ def class Configuration {
     def homeFolder = System.getProperty("user.home")
     def path = homeFolder + "/.m2/repository"
     def dryRun = true
-    def printDetails = false
+    def printDetails = true
     def maxAgeSnapshotsInDays = 60
     def maxAgeInDays = 90
     def versionsToKeep = ["3.1.0.M1"]
-    def snapshotsOnly = false
+    def snapshotsOnly = true
 }
 
 /*
