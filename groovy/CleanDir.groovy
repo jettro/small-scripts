@@ -1,49 +1,103 @@
 /**
- * This groovy scripts can be used to clean up your local maven repository without the need to throw it away completely
+ * This groovy scripts can be used to clean up your local maven repository without the need to throw it away completely.
+ *
+ * You can provide the script with a number of arguments, it is probably easier though to change the Configuration object
+ * to your needs before you run the script.
+ *
+ * I will first explain the defaults, than tell the order of arguments that you can provide to influence what the
+ * script does. By default we clean the complete maven repository that is in your home folder. By default we show
+ * the details of what we do, but we do a dry run, so we actually do not do a lot. By default we throw away snapshots
+ * that are older than 60 days.
+ *
+ * Defaults plus order of arguments as they can be provided to the script
+ * dryRun : true
+ * printDetails : true
+ * path : home.from.system/.m2/repository
+ * maxAgeSnapshotsInDays : 60
  *
  * @author Jettro Coenradie
  */
 
-def home = System.getProperty("user.home");
-def path = home + '/.m2/repository/nl/rijksoverheid';
-maxAgeSnapshotsInDays = 30;
-now = new Date();
+/*
+ * Here we specify the defaults of the script
+ */
+now = new Date()
+configuration = new Configuration()
+cleanedSize = 0
+details = []
 
 
-// Read provided argument
-if (args) {
-    path = args[0];
-} else {
-    println "Using the default path $path";
+def class Configuration {
+    def homeFolder = System.getProperty("user.home")
+    def path = homeFolder + "/.m2/repository"
+    def maxAgeSnapshotsInDays = 60
+    def dryRun = true
+    def printDetails = true
 }
+// Read provided arguments and store the provided arguments in the configuration object
+if (args) {
+    configuration.dryRun = args[0].toBoolean()
+    if (args.length > 1) {
+        configuration.printDetails = args[1].toBoolean()
+    }
+    if (args.length > 2) {
+        configuration.path = args[2]
+    }
+    if (args.length > 3) {
+        configuration.maxAgeSnapshotsInDays = args[3]
+    }
+}
+printConfiguration()
 
 // Scan the current directory or the directory as provided by the first parameter of the script
-def mainDir = new File(path);
+def mainDir = new File(configuration.path)
 if (!mainDir.directory) {
-    printf("The provided directory \"%s\" is not a directory", path);
+    printf("The provided directory \"%s\" is not a directory", configuration.path)
 } else {
-    printf("About to clean the directory \"%s\"\n", path);
-    readDir(mainDir);
-}
-
-def readDir(File file) {
-    def lastModified = new Date(file.lastModified());
-    def ageInDays = now - lastModified;
-//    printf("Dir: %s\n", file.canonicalPath);
-//    printf("The directory is last modified at %s\n", lastModified);
-//    printf("Number of days between last change and now is %d\n", ageInDays);
-    def directories = file.listFiles(new DirectoryFilter());
-    if (directories.length > 0) {
-        directories.each {
-            readDir(it);
-        }
-    } else {
-//        println("No subdirectories found");
-        if (ageInDays > maxAgeSnapshotsInDays && file.canonicalPath.endsWith("-SNAPSHOT")) {
-            printf("About to remove directory %s\n", file.canonicalPath);
-            file.deleteDir();
+    cleanDir(mainDir);
+    printf("* Total size cleaned is %dk\n", Math.round(cleanedSize / 1024))
+    println "*******************************************************************************"
+    if (configuration.printDetails) {
+        details.each {
+            println it
         }
     }
+}
+
+def cleanDir(File file) {
+    def lastModified = new Date(file.lastModified());
+    def ageInDays = now - lastModified;
+    def directories = file.listFiles(new DirectoryFilter());
+
+    if (directories.length > 0) {
+        directories.each {
+            cleanDir(it);
+        }
+    } else {
+        if (ageInDays > configuration.maxAgeSnapshotsInDays && file.canonicalPath.endsWith("-SNAPSHOT")) {
+            def files = file.listFiles()
+            def size = 0
+            files.each {
+                size += it.size()
+            }
+            cleanedSize += size
+            details.add("About to remove directory $file.canonicalPath with total size $size and $ageInDays days old");
+            if (!configuration.dryRun) {
+                file.deleteDir();
+            }
+        }
+    }
+}
+
+def printConfiguration() {
+    println "*******************************************************************************"
+    println "* About the clean a maven repository"
+    printf("* Start cleaning at path: %s\n", configuration.path)
+    printf("* Remove all snapshots that are older than %d days\n", configuration.maxAgeSnapshotsInDays)
+    if (configuration.dryRun) {
+        println("* We are going to do a dry run")
+    }
+
 }
 
 def class DirectoryFilter implements FileFilter {
