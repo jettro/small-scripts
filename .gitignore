@@ -7,4 +7,6 @@
 *.iws
 *.iml
 out/*
-*/UseArtifactory.groovy
+.gradle
+build
+groovy/artifactory/UseArtifactory.groovy
