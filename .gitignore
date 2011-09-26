@@ -7,3 +7,4 @@
 *.iws
 *.iml
 out/*
+groovy/UseArtifactory.groovy
