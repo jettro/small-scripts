@@ -13,7 +13,8 @@ class GuestbookSlurper {
     private GPathResult page
 
     GuestbookSlurper() {
-        page = slurper.parse("http://books.dreambook.com/nicobulder/afrikasite.html")
+//        page = slurper.parse("http://books.dreambook.com/nicobulder/afrikasite.html")
+        page = slurper.parse("http://books.dreambook.com/nicobulder/nicobulder.html")
     }
 
     def obtainGuestbookItems() {
