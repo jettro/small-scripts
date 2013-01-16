@@ -29,8 +29,8 @@ nonSnapshotDirectoryFilter = new NonSnapshotDirectoryFilter()
 def class Configuration {
     def homeFolder = System.getProperty("user.home")
     def path = homeFolder + "/.m2/repository"
-    def dryRun = true
-    def printDetails = true
+    def dryRun = System.getProperty("dryRun", "true").toBoolean()
+    def printDetails = System.getProperty("verbose", "true").toBoolean()
     def maxAgeSnapshotsInDays = 60
     def maxAgeInDays = 90
     def versionsToKeep = ["3.1.0.M1"]
